@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+
+# Datasets (descargar por separado, ver fundus_images/README.md)
+fundus_images/dataset_*/
