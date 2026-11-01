@@ -1,0 +1,31 @@
+{
+  "session": "s10",
+  "date": "2026-11-01",
+  "input": "fundus_images/dataset_drive/DRIVE/test/images/10_test.tif",
+  "mask": "/tmp/claude-1000/-home-mirada-Desktop-mirada-main/453e67ac-915b-4f8f-a84f-f334742b92df/scratchpad/fin/m/10_test_mask.png",
+  "dicom": null,
+  "metrics": {
+    "mean_caliber_px": 3.98,
+    "caliber_relative_variability": 0.428,
+    "vascular_density": 0.121,
+    "tortuosity_index": 1.096,
+    "tortuosity_segments_used": 134,
+    "disc_needs_review": false,
+    "avr": 0.574,
+    "avr_unavailable_reason": null,
+    "avr_detail": {
+      "avr": 0.574,
+      "artery_mean_caliber_px": 3.8,
+      "vein_mean_caliber_px": 6.61,
+      "artery_px_count": 2869,
+      "vein_px_count": 204,
+      "disc_radius_px": 68.5
+    }
+  },
+  "risk_level": "ALTO",
+  "risk_factors": [
+    "tortuosidad elevada",
+    "AVR reducido"
+  ],
+  "disclaimer": "Score proxy calibrado contra el dataset DRIVE/RITE, no validado clínicamente. El AVR (si está disponible) usa una zona de medición simplificada, no el protocolo clínico estandarizado (Knudtson revised formula, 6 vasos principales). El clasificador arteria/vena tiene ~72% de exactitud (vs. 50% al azar) — en algunas imágenes el AVR puede salir fisiológicamente implausible (>1.0)."
+}
