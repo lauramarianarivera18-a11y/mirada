@@ -38,6 +38,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 from fundus.color_balance import gray_world_balance, remove_reflections, apply_clahe_contrast
+from vascular.unet_model import get_device
 
 DEFAULT_DATA_DIR = "fundus_images/dataset_smdg"
 DEFAULT_OUTPUT = "models/disc_smdg.pth"
@@ -199,7 +200,8 @@ def train(args):
 
     loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
-    device = "cpu"
+    device = get_device()
+    print(f"[INFO] Entrenando en: {device}")
     model = DiscNet().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
@@ -317,7 +319,9 @@ def finetune(args):
     combined = torch.utils.data.ConcatDataset([manual_dataset, base_dataset])
     loader = torch.utils.data.DataLoader(combined, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
-    device = "cpu"
+    device = get_device()
+    print(f"[INFO] Entrenando en: {device}")
+    model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -327,6 +331,7 @@ def finetune(args):
         t0 = time.time()
         running_loss = 0.0
         for x, y in tqdm(loader, desc=f"Fine-tune {epoch}/{args.epochs}", leave=False):
+            x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
             pred = model(x)
             loss = F.mse_loss(pred, y)

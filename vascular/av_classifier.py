@@ -23,7 +23,7 @@ import torch.nn.functional as F
 from PIL import Image
 from tqdm import tqdm
 
-from vascular.unet_model import UNet, pad_to_multiple, DEPTH, BASE_CHANNELS
+from vascular.unet_model import UNet, get_device, pad_to_multiple, DEPTH, BASE_CHANNELS
 
 DEFAULT_DATA_DIR = "fundus_images/dataset_drive_av/AV_groundTruth/training"
 DEFAULT_OUTPUT = "models/av_classifier.pth"
@@ -165,7 +165,8 @@ def train(args):
                                   patches_per_epoch=args.patches_per_epoch, mean=mean, std=std)
     loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
-    device = "cpu"
+    device = get_device()
+    print(f"[INFO] Entrenando en: {device}")
     model = UNet(out_ch=2).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 

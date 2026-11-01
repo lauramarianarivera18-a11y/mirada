@@ -87,6 +87,15 @@ else
     warn "Para soporte CUDA nativo en Jetson, compila OpenCV desde fuentes"
 fi
 
+# ── 6b. PyTorch con GPU (JetPack 6 / CUDA 12.6) ─────────────────────────────
+# torch 2.8.0: las versiones 2.9.1 y 2.11.0 de este índice requieren libcudss,
+# que no está en los repositorios de JetPack. libcupti viene en cuda-cupti-12-6.
+info "Instalando PyTorch para CUDA 12.6..."
+sudo apt-get install -y cuda-cupti-12-6
+pip3 install --no-deps --index-url https://pypi.jetson-ai-lab.io/jp6/cu126/ torch==2.8.0
+pip3 install typing_extensions sympy networkx jinja2 fsspec filelock --quiet
+ok "PyTorch instalado"
+
 # ── 7. Resto de dependencias del proyecto ────────────────────────────────────
 info "Instalando resto de dependencias (Pillow, scikit-image, matplotlib...)..."
 pip3 install \

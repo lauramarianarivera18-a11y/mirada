@@ -6,7 +6,7 @@ conocidos donde la heurística engancha un reflejo especular (23_training) o el 
 sobreexpuesto (34_training) — en ambos casos hay reflejos/brillo confuso pero los vasos
 grandes igual convergen en un solo punto.
 
-Usa el segmentador de vasos ya entrenado (commit 9, vascular/segmentation.py + models/unet_drive.pth).
+Usa el segmentador de vasos ya entrenado (commit 9, vascular/segmentation.py + models/unet_drive_gw.pth).
 IMPORTANTE: requiere la imagen ORIGINAL (no CLAHE) — segment() ya aplica internamente el
 dominio correcto (ver nota en vascular/segmentation.py: el modelo se entrenó sobre DRIVE crudo
 y sobre-detecta vasos si se le da una imagen con CLAHE).
@@ -24,7 +24,7 @@ import numpy as np
 from vascular.segmentation import load_model, segment
 from vascular.caliber import compute_skeleton, caliber_map
 
-DEFAULT_MODEL_PATH = "models/unet_drive.pth"
+DEFAULT_MODEL_PATH = "models/unet_drive_gw.pth"
 
 _model_cache = {}
 

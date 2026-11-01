@@ -6,11 +6,11 @@ así que en vez de "--download" (como sugiere el doc original) se entrena
 desde cero sobre el dataset DRIVE ya descargado (fundus_images/dataset_drive/).
 
 Entrenamiento (una sola vez, ~15-30 min en CPU de la Jetson):
-  python vascular/unet_model.py --train --output models/unet_drive.pth
+  python vascular/unet_model.py --train --output models/unet_drive_gw.pth
 
 Conversión a TensorRT: requiere torch2trt/TensorRT instalados, que esta Jetson
 no tiene configurados todavía (queda para el commit 12 — optimización Jetson).
-  python vascular/unet_model.py --convert --input models/unet_drive.pth --output models/unet_trt.engine
+  python vascular/unet_model.py --convert --input models/unet_drive_gw.pth --output models/unet_trt.engine
 """
 
 import argparse
@@ -25,8 +25,10 @@ import torch.nn.functional as F
 from PIL import Image
 from tqdm import tqdm
 
+from fundus.color_balance import gray_world_balance, remove_reflections
+
 DEFAULT_DATA_DIR = "fundus_images/dataset_drive/DRIVE/training"
-DEFAULT_OUTPUT = "models/unet_drive.pth"
+DEFAULT_OUTPUT = "models/unet_drive_gw.pth"
 PATCH_SIZE = 64
 BASE_CHANNELS = 16
 DEPTH = 4  # 4 downsamplings -> factor 16, usado también para el padding en inferencia full-image
@@ -103,7 +105,9 @@ def _load_gray(path: Path) -> np.ndarray:
 
 
 def _load_rgb(path: Path) -> np.ndarray:
-    return np.array(Image.open(path).convert("RGB"))
+    """Carga con el mismo balance de blancos + reflejos que aplica segment() antes de inferir."""
+    bgr = np.array(Image.open(path).convert("RGB"))[:, :, ::-1].copy()
+    return remove_reflections(gray_world_balance(bgr))[:, :, ::-1].copy()
 
 
 def list_drive_triplets(data_dir: Path):
@@ -217,6 +221,11 @@ def pad_to_multiple(img: np.ndarray, multiple: int):
     return padded, h, w
 
 
+def get_device() -> str:
+    """GPU si torch la detecta; si no, CPU."""
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
 @torch.no_grad()
 def infer_full_image(model, rgb_uint8: np.ndarray, mean, std, device="cpu", multiple=2 ** DEPTH):
     img = rgb_uint8.astype(np.float32) / 255.0
@@ -279,7 +288,8 @@ def train(args):
     loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
                                           shuffle=True, num_workers=0)
 
-    device = "cpu"
+    device = get_device()
+    print(f"[INFO] Entrenando en: {device}")
     model = UNet().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 

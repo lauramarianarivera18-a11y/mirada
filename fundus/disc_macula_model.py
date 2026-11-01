@@ -174,7 +174,8 @@ def train(args):
     loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     val_dataset = DiscMaculaDataset(val_s, img_size=args.img_size, augment=False)
 
-    device = "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"[INFO] Entrenando en: {device}")
     model = DiscMaculaNet().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 

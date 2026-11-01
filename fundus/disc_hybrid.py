@@ -29,6 +29,7 @@ import torch
 
 from fundus.disc_model_smdg import DiscNet, predict as model_predict
 from fundus.disc_vessel_convergence import detect_disc_by_convergence
+from vascular.unet_model import get_device
 
 DEFAULT_MODEL_PATH = "models/disc_smdg_clahe.pth"
 
@@ -38,7 +39,7 @@ DEFAULT_MODEL_PATH = "models/disc_smdg_clahe.pth"
 # par de respaldo para cuando la heurística ya se descartó.
 HM_THRESHOLD_PX = 50   # heurística vs modelo SMDG
 HC_THRESHOLD_PX = 65   # heurística vs convergencia de vasos
-MC_THRESHOLD_PX = 95   # modelo SMDG vs convergencia de vasos
+MC_THRESHOLD_PX = 105  # modelo SMDG vs convergencia de vasos (98 en 23_training con unet_drive_gw)
 
 _disc_model_cache = {}
 
@@ -48,7 +49,7 @@ def load_disc_model(path: str = DEFAULT_MODEL_PATH):
         ckpt = torch.load(path, map_location="cpu", weights_only=False)
         model = DiscNet()
         model.load_state_dict(ckpt["state_dict"])
-        model.eval()
+        model.to(get_device()).eval()
         _disc_model_cache[path] = model
     return _disc_model_cache[path]
 
@@ -73,7 +74,7 @@ def detect_optic_disc_hybrid(frame: np.ndarray, clahe_img: np.ndarray, heuristic
 
     if disc_model is None:
         disc_model = load_disc_model()
-    model_pos = model_predict(disc_model, clahe_img)
+    model_pos = model_predict(disc_model, clahe_img, device=next(disc_model.parameters()).device)
     conv_pos = detect_disc_by_convergence(frame, model=vessel_model)
 
     d_hm = dist_px(heuristic_pos, model_pos)

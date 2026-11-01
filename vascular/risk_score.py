@@ -29,7 +29,7 @@ from vascular.caliber import caliber_stats
 from vascular.tortuosity import tortuosity_index
 from vascular.avr import compute_avr
 from vascular.av_classifier import infer_av_probs
-from vascular.unet_model import UNet
+from vascular.unet_model import UNet, get_device
 from vascular.overlay import side_by_side_av
 from fundus.preprocess import preprocess_image
 from fundus.color_balance import gray_world_balance, remove_reflections
@@ -45,10 +45,12 @@ from fundus.storage import load_image, dicom_metadata
 # (ver vascular/segmentation.py) — la máscara vieja sobre-detectaba ~30% de la imagen como vaso
 # en vez de ~9%, así que calibre/variabilidad/densidad/tortuosidad calculados sobre ella no
 # eran representativos. Valores viejos (con la máscara rota): 0.68 / 1.10 / 0.25 / 0.76.
-REL_VARIABILITY_HIGH = 0.45   # variabilidad de calibre (std/mean) por encima de esto: vaso irregular
+# Recalibrados 2026-11-01 para models/unet_drive_gw.pth sobre las 20 imágenes de DRIVE/training
+# (antes: 0.45 / 1.09 / 0.11 / 0.74). Si cambia el segmentador, hay que recalibrarlos.
+REL_VARIABILITY_HIGH = 0.44   # variabilidad de calibre (std/mean) por encima de esto: vaso irregular
 TORTUOSITY_HIGH = 1.09        # tortuosidad por encima de esto: vasos más curvados de lo típico
-DENSITY_LOW = 0.11            # densidad vascular por debajo de esto: posible rarefacción vascular
-AVR_LOW = 0.74                 # AVR por debajo de esto (~p25 sobre las 20 imágenes de referencia): arterias angostas
+DENSITY_LOW = 0.115           # densidad vascular por debajo de esto: posible rarefacción vascular
+AVR_LOW = 0.63                 # AVR por debajo de esto (~p25 sobre las 20 imágenes de referencia): arterias angostas
 
 DEFAULT_OUTPUT = "reports/"
 AV_MODEL_PATH = "models/av_classifier.pth"
@@ -76,10 +78,11 @@ def get_av_probs(frame_bgr, av_model_path: Path):
     ckpt = torch.load(av_model_path, map_location="cpu", weights_only=False)
     model = UNet(out_ch=2, base=ckpt["base_channels"], depth=ckpt["depth"])
     model.load_state_dict(ckpt["state_dict"])
-    model.eval()
+    device = get_device()
+    model.to(device).eval()
     clean = remove_reflections(gray_world_balance(frame_bgr))
     rgb = cv2.cvtColor(clean, cv2.COLOR_BGR2RGB)
-    return infer_av_probs(model, rgb, ckpt["mean"], ckpt["std"], device="cpu")
+    return infer_av_probs(model, rgb, ckpt["mean"], ckpt["std"], device=device)
 
 
 def compute_metrics(frame, vessel_mask, av_model_path: Path, av_probs=None) -> dict:
